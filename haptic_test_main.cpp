@@ -1,3 +1,4 @@
+#ifdef NOOOOOOOOOO
 #include <Arduino.h>
 #include <SimpleFOC.h>
 #include "encoders/smoothing/SmoothingSensor.h"
@@ -35,3 +36,4 @@ void setup(){
 void loop(){
 haptic.haptic_loop();
 }
+#endif

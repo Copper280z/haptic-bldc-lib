@@ -5,13 +5,13 @@ static const float idle_velocity_ewma_alpha = 0.001;
 static const float idle_velocity_rad_per_sec = 0.05;
 static const int32_t idle_correction_delay = 500; //ms
 
-PIDController default_pid{
-    .P = 4,
-    .I = 0,
-    .D = 0.005,
-    .output_ramp = 10000,
-    .limit = 1.4
-};
+PIDController default_pid = PIDController(
+    4.0f,
+    0.0f,
+    0.005f,
+    10000.0f,
+    1.4f
+);
 
 hapticState default_config;
 hapticParms default_params;
@@ -59,6 +59,7 @@ void HapticInterface::init(void){
 
 void HapticInterface::find_detent(void)
 {
+    // add hysteresis here
     haptic_config->attract_angle = round(motor->shaft_angle / haptic_config->distance_pos) * haptic_config->distance_pos;
 }
 
@@ -69,15 +70,16 @@ float HapticInterface::haptic_target(void)
     
     // Call FOC loop
     motor->loopFOC();
-
+    float pid_out;
     // Target Command
     if(fabsf(motor->shaft_velocity) > 60) {
-        motor->move(0);
+        pid_out=0;
     // If velocity (turn speed is greather than x then dont apply any torque
     } else {
-        motor->move(default_pid(error));
+        pid_out = haptic_pid->operator()(error);
     }
-    return haptic_pid->operator()(error);
+    motor->move(pid_out);
+    return pid_out;
 }
 
 void HapticInterface::haptic_click(void){
@@ -122,12 +124,12 @@ void HapticInterface::haptic_loop(void){
     
     // TODO: Include Check if Config is Correct before triggering loop
 
-    while (1){
+    // while (1){
     correct_pid(); // Adjust PID (Derivative Gain)
     find_detent(); // Calculate attraction angle depending on configured distance position.
     state_update(); // Determine and update current position    
     haptic_target(); // PID Command
-    }
+    // }
 }
 
 void HapticInterface::correct_pid(void)

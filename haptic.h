@@ -1,10 +1,9 @@
 #ifndef HAPTIC_H
-#define HAPIC_H
+#define HAPTIC_H
 
 #include <Arduino.h>
 #include <SimpleFOC.h>
 #include <SimpleFOCDrivers.h>
-#include "encoders/mt6701/MagneticSensorMT6701SSI.h"
 #include <motor.h>
 
 typedef struct
