@@ -1,5 +1,7 @@
 #include "haptic.h"
 #include "util.h"
+#include "usbd_hid_composite_if.h"
+#include "hid_keycodes.h"
 
 static const float idle_velocity_ewma_alpha = 0.001;
 static const float idle_velocity_rad_per_sec = 0.05;
@@ -155,22 +157,33 @@ void HapticInterface::correct_pid(void)
     }
     haptic_pid->limit = bound ? haptic_config->endstop_strength_unit : haptic_config->detent_strength_unit;
 }
-
+uint32_t key_send, last_key_send;
 void HapticInterface::state_update(void)
 {
         // Determine and Update Current Position
     // Check if attractor angle is within calculated position between min and max position and update current position if in range.
-
+	uint8_t HIDbuffer[8] = {0}; 
     if(haptic_config->attract_angle > haptic_config->current_pos * haptic_config->distance_pos && haptic_config->current_pos < haptic_config->end_pos){
         haptic_config->current_pos++;
         haptic_config->last_attract_angle = haptic_config->attract_angle;
-        Serial.print("[POS]: ");
-        Serial.println(haptic_config->current_pos); 
+        HIDbuffer[2] = KEY_VOLUMEUP;
+        key_send=1;
+        // Serial.print("[POS]: ");
+        // Serial.println(haptic_config->current_pos); 
     } else if (haptic_config->attract_angle < haptic_config->current_pos * haptic_config->distance_pos && haptic_config->current_pos > haptic_config->start_pos){
         haptic_config->current_pos--;
         haptic_config->last_attract_angle = haptic_config->attract_angle;
-        Serial.print("[POS]: ");
-        Serial.println(haptic_config->current_pos);
+        HIDbuffer[2] = KEY_VOLUMEDOWN;
+        key_send=1;
+
+        // Serial.print("[POS]: ");
+        // Serial.println(haptic_config->current_pos);
     }
+    if (micros()-last_key_send > 10e3 || key_send){
+	    HID_Composite_keyboard_sendReport(HIDbuffer, 8);
+        last_key_send=micros();
+        key_send=0;
+    }
+
 
 }
